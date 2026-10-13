@@ -159,6 +159,21 @@
   $('btnPdf').addEventListener('click', function () { doExport('pdf'); });
   $('btnPng').addEventListener('click', function () { doExport('png'); });
 
+  /* ---------- schermata di avvio ---------- */
+  (function () {
+    var sp = $('splash'); if (!sp) return;
+    var done = false;
+    function close() {
+      if (done) return; done = true;
+      sp.classList.add('out');
+      setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 700);
+    }
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(close, reduce ? 2500 : 6600);
+    sp.addEventListener('click', close);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') close(); });
+  })();
+
   /* ---------- avvio ---------- */
   syncFormFromState();
   window.api.getAssets().then(function (a) {
