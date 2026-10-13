@@ -1,5 +1,5 @@
 /* Schermata di avvio: Omnia Casa × neXus, poi il logo Omnia Print by neXus (6,5 s). */
-.splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5vh;overflow:hidden;cursor:pointer;
+.splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5vh;overflow:hidden;cursor:default;
   background:linear-gradient(160deg,#0E3A25 0%,#145A36 48%,#0B4A3A 100%);transition:opacity .6s ease,transform .6s ease}
 .splash.out{opacity:0;transform:scale(1.03);pointer-events:none}
 .sp-blob{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none}

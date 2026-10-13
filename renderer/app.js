@@ -159,19 +159,14 @@
   $('btnPdf').addEventListener('click', function () { doExport('pdf'); });
   $('btnPng').addEventListener('click', function () { doExport('png'); });
 
-  /* ---------- schermata di avvio ---------- */
+  /* ---------- schermata di avvio (non saltabile, 6,5 s) ---------- */
   (function () {
     var sp = $('splash'); if (!sp) return;
-    var done = false;
-    function close() {
-      if (done) return; done = true;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(function () {
       sp.classList.add('out');
       setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 700);
-    }
-    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    setTimeout(close, reduce ? 2500 : 6600);
-    sp.addEventListener('click', close);
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') close(); });
+    }, reduce ? 2500 : 6600);
   })();
 
   /* ---------- avvio ---------- */
