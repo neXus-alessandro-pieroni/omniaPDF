@@ -2,22 +2,20 @@
   'use strict';
   var P = window.Poster;
   var KEY = 'omnia.locandina.v1';
-  var W = 1123, H = 1587;
 
   function defaults() {
     return {
       titolo: 'Riunione di condominio', condominio: '', indirizzo: '',
       data: '', ora: '', luogo1: P.SEDE.via, luogo2: P.SEDE.citta,
       zoom: true, zoomLink: '', zoomId: '', zoomPass: '',
-      ordine: [''],
+      ordine: [''], orientamento: 'v',
     };
   }
   var state = defaults();
-  var size = 'A4';
   try {
     var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (saved && saved.state) { state = Object.assign(defaults(), saved.state); if (!Array.isArray(state.ordine) || !state.ordine.length) state.ordine = ['']; }
-    if (saved && (saved.size === 'A3' || saved.size === 'A4')) size = saved.size;
+    if (state.orientamento !== 'h') state.orientamento = 'v';
   } catch (e) { /* ignora */ }
 
   var $ = function (id) { return document.getElementById(id); };
@@ -25,7 +23,7 @@
   var assets = null, frameReady = false, drawTimer = null;
 
   function persist() {
-    try { localStorage.setItem(KEY, JSON.stringify({ state: state, size: size })); } catch (e) { /* ignora */ }
+    try { localStorage.setItem(KEY, JSON.stringify({ state: state })); } catch (e) { /* ignora */ }
   }
 
   /* ---------- form ---------- */
@@ -34,7 +32,7 @@
     $('zoom').checked = !!state.zoom;
     $('zoomFields').hidden = !state.zoom;
     renderAgenda();
-    setSize(size, true);
+    setOrient(state.orientamento, true);
   }
 
   fields.forEach(function (f) {
@@ -86,16 +84,16 @@
     }
   });
 
-  /* ---------- formato ---------- */
-  function setSize(s, silent) {
-    size = s;
+  /* ---------- orientamento ---------- */
+  function setOrient(o, silent) {
+    state.orientamento = o === 'h' ? 'h' : 'v';
     document.querySelectorAll('.seg button').forEach(function (b) {
-      b.setAttribute('aria-checked', String(b.dataset.size === s));
+      b.setAttribute('aria-checked', String(b.dataset.orient === state.orientamento));
     });
-    if (!silent) persist();
+    if (!silent) { persist(); draw(); fit(); }
   }
   document.querySelectorAll('.seg button').forEach(function (b) {
-    b.addEventListener('click', function () { setSize(b.dataset.size); });
+    b.addEventListener('click', function () { setOrient(b.dataset.orient); });
   });
 
   /* ---------- anteprima ---------- */
@@ -121,6 +119,7 @@
   function changed() { persist(); if (drawTimer) clearTimeout(drawTimer); drawTimer = setTimeout(draw, 80); }
 
   function fit() {
+    var dim = P.dims(state), W = dim.w, H = dim.h;
     var box = $('previewBox');
     var cs = getComputedStyle(box);
     var aw = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
@@ -128,7 +127,9 @@
     var s = Math.max(0.1, Math.min(aw / W, ah / H));
     var wrap = $('previewFrameWrap');
     wrap.style.width = Math.floor(W * s) + 'px'; wrap.style.height = Math.floor(H * s) + 'px';
-    $('preview').style.transform = 'scale(' + s + ')';
+    var fr = $('preview');
+    fr.style.width = W + 'px'; fr.style.height = H + 'px';
+    fr.style.transform = 'scale(' + s + ')';
   }
   new ResizeObserver(fit).observe($('previewBox'));
 
@@ -149,7 +150,7 @@
     if (miss.length && !confirm('Mancano ancora alcuni dati:\n\n• ' + miss.join('\n• ') + '\n\nVuoi scaricare comunque la locandina?')) return;
     var b1 = $('btnPdf'), b2 = $('btnPng'); b1.disabled = b2.disabled = true;
     try {
-      var res = await window.api.exportFile({ config: state, format: format, size: size });
+      var res = await window.api.exportFile({ config: state, format: format });
       if (res.ok) toast('Locandina salvata', { path: res.path });
       else if (!res.canceled) toast('Non sono riuscito a salvare: ' + (res.error || 'errore sconosciuto'), { err: true });
     } catch (e) { toast('Errore durante il salvataggio', { err: true }); }

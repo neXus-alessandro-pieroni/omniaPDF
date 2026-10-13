@@ -4,15 +4,18 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; script-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Omnia Casa · Locandine riunioni</title>
+<title>Omnia Print by neXus</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="app">
   <header class="top">
-    <img id="brandLogo" alt="Omnia Casa Group" class="brand">
-    <div class="top-title">Locandine riunioni</div>
-    <div class="collab">In collaborazione con <strong>neXus</strong></div>
+    <div class="lockup" role="img" aria-label="Omnia Casa in collaborazione con neXus">
+      <img id="brandLogo" alt="" class="brand">
+      <span class="times" aria-hidden="true">×</span>
+      <img class="nx-logo" src="../assets/nexus-wordmark-light.svg" alt="">
+    </div>
+    <div class="top-title">Omnia Print <span class="by">by neXus</span></div>
     <button id="btnNew" class="ghost" type="button">Nuova riunione</button>
   </header>
 
@@ -86,10 +89,11 @@
         <div id="previewFrameWrap" class="frame-wrap"><iframe id="preview" title="Anteprima locandina" tabindex="-1"></iframe></div>
       </div>
       <div class="actions">
-        <div class="seg" role="radiogroup" aria-label="Formato">
-          <button type="button" role="radio" data-size="A4" aria-checked="true">A4</button>
-          <button type="button" role="radio" data-size="A3" aria-checked="false">A3</button>
+        <div class="seg" role="radiogroup" aria-label="Orientamento (foglio A4)">
+          <button type="button" role="radio" data-orient="v" aria-checked="true">▯ Verticale</button>
+          <button type="button" role="radio" data-orient="h" aria-checked="false">▭ Orizzontale</button>
         </div>
+        <span class="fmt">Foglio A4</span>
         <button id="btnPdf" class="primary" type="button">Scarica PDF</button>
         <button id="btnPng" class="secondary" type="button">Scarica immagine (PNG)</button>
       </div>

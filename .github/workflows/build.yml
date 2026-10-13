@@ -1,4 +1,4 @@
-name: Crea programma Windows e macOS
+name: Crea Omnia Print by neXus (Windows e macOS)
 on:
   workflow_dispatch:
   push:
@@ -24,7 +24,7 @@ jobs:
       - run: npm run ${{ matrix.script }}
       - uses: actions/upload-artifact@v4
         with:
-          name: omnia-locandine-${{ matrix.os }}
+          name: omnia-print-${{ matrix.os }}
           path: |
             dist/*.exe
             dist/*.dmg
@@ -32,7 +32,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: Omnia Casa Locandine v1.0.${{ github.run_number }}
+          name: Omnia Print by neXus v1.0.${{ github.run_number }}
           files: |
             dist/*.exe
             dist/*.dmg

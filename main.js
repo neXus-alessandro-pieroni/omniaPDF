@@ -26,7 +26,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1360, height: 880, minWidth: 1040, minHeight: 700,
     backgroundColor: '#0E3A25',
-    title: 'Omnia Casa · Locandine riunioni',
+    title: 'Omnia Print by neXus',
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -49,16 +49,15 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
-const SIZES = { A3: { w: 297, h: 420 }, A4: { w: 210, h: 297 } };
-const POSTER_W = 1123, POSTER_H = 1587;
 
 async function renderWindow(config) {
   const { logo, fontCss } = getAssets();
   const html = Poster.documentHtml(config, { logo, fontCss });
   const tmp = path.join(os.tmpdir(), `omnia-locandina-${process.pid}-${Date.now()}.html`);
   fs.writeFileSync(tmp, html);
+  const dim = Poster.dims(config);
   const w = new BrowserWindow({
-    show: false, width: POSTER_W, height: POSTER_H, useContentSize: true,
+    show: false, width: dim.w, height: dim.h, useContentSize: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, javascript: true },
   });
   await w.loadFile(tmp);
@@ -72,12 +71,13 @@ function safeName(s) {
 
 ipcMain.handle('get-assets', () => getAssets());
 
-ipcMain.handle('export', async (_e, { config, format, size }) => {
+ipcMain.handle('export', async (_e, { config, format }) => {
   const fmt = format === 'png' ? 'png' : 'pdf';
-  const sz = size === 'A3' ? 'A3' : 'A4';
+  const land = config.orientamento === 'h';
+  const { w: POSTER_W, h: POSTER_H } = Poster.dims(config);
   const d = Poster.parseDate(config.data);
   const base = ['Locandina', safeName(config.condominio), d ? config.data : ''].filter(Boolean).join('-');
-  const defName = fmt === 'pdf' ? `${base}-${sz}.pdf` : `${base}.png`;
+  const defName = fmt === 'pdf' ? `${base}${land ? '-orizzontale' : ''}.pdf` : `${base}${land ? '-orizzontale' : ''}.png`;
   const res = await dialog.showSaveDialog(win, {
     title: fmt === 'pdf' ? 'Salva la locandina (PDF)' : 'Salva la locandina (immagine)',
     defaultPath: path.join(app.getPath('documents'), defName),
@@ -89,9 +89,9 @@ ipcMain.handle('export', async (_e, { config, format, size }) => {
   try {
     ({ w: rw, tmp } = await renderWindow(config));
     if (fmt === 'pdf') {
-      const pageWpx = (SIZES[sz].w / 25.4) * 96;
+      const pageWpx = ((land ? 297 : 210) / 25.4) * 96;
       const data = await rw.webContents.printToPDF({
-        pageSize: sz, printBackground: true,
+        pageSize: 'A4', landscape: land, printBackground: true,
         margins: { top: 0, bottom: 0, left: 0, right: 0 },
         scale: (pageWpx / POSTER_W) * 0.9995,
       });

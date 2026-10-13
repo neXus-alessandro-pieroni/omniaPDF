@@ -1,3 +1,5 @@
+@font-face{font-family:Inter;font-weight:800;src:url(../fonts/Inter-ExtraBold.woff) format('woff')}
+@font-face{font-family:Inter;font-weight:500;src:url(../fonts/Inter-Medium.woff) format('woff')}
 :root{
   --green-900:#0E3A25; --green-800:#145A36; --green-700:#17482F; --green-500:#22A034; --lime:#A9D072; --orange:#EA661D;
   --ink:#14281D; --muted:#5B6B61; --line:#D8E2D6; --bg:#EDF2EA; --card:#FFFFFF;
@@ -9,10 +11,13 @@ body{font-family:-apple-system,"Segoe UI",system-ui,Roboto,sans-serif;color:var(
   radial-gradient(900px 500px at 100% -10%, rgba(169,208,114,.35), transparent 60%),
   radial-gradient(700px 500px at -10% 110%, rgba(34,160,52,.18), transparent 60%), var(--bg)}
 .top{display:flex;align-items:center;gap:22px;padding:10px 26px;background:linear-gradient(135deg,#FFFFFF,#E9F3E2);color:var(--green-700);border-bottom:1px solid var(--line);box-shadow:0 6px 24px rgba(14,58,37,.10)}
+.lockup{display:flex;align-items:center;gap:18px}
 .brand{height:76px;width:auto;display:block}
+.times{font-size:30px;font-weight:300;color:#B98A1F;line-height:1;transform:translateY(-2px)}
+.nx-logo{height:70px;width:auto;display:block}
+.top-title .by{font-weight:500;color:var(--muted);font-size:15px;margin-left:6px}
+.fmt{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 .top-title{font-size:20px;font-weight:800;letter-spacing:.2px;flex:1}
-.collab{font-size:12.5px;font-weight:600;color:var(--muted);padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.7)}
-.collab strong{color:var(--green-700);font-weight:800;letter-spacing:.03em}
 .main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(360px,430px) 1fr;gap:18px;padding:18px 22px 20px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(20,60,40,.08)}
 .form{overflow:auto;padding:6px 18px 18px}
