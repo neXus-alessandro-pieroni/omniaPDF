@@ -12,7 +12,7 @@ Nel PDF il pulsante «Entra nella riunione» è cliccabile e porta al link Zoom 
 
 ## Installazione
 - **Windows:** esegui `Omnia Casa Locandine Setup 1.0.0.exe` (oppure decomprimi lo zip e apri `Omnia Casa Locandine.exe`). Se compare «Windows ha protetto il PC» → *Ulteriori informazioni* → *Esegui comunque*.
-- **macOS:** apri il `.dmg` e trascina l'app in Applicazioni. Al primo avvio: clic destro sull'app → *Apri* → *Apri* (l'app non è firmata con un account Apple Developer).
+- **macOS:** apri il `.dmg` e trascina l'app in Applicazioni. Se macOS dice che l'app è «danneggiata» o «da sviluppatore non identificato»: apri *Terminale* e lancia `xattr -cr "/Applications/Omnia Casa Locandine.app"`, poi riapri l'app (oppure *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*). L'app non è firmata con un account Apple Developer.
 
 ## Per sviluppatori
 ```

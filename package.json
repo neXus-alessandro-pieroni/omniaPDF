@@ -44,7 +44,9 @@
         }
       ],
       "icon": "build/icon.png",
-      "identity": null
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     },
     "dmg": {
       "title": "Omnia Casa Locandine"
