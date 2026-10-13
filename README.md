@@ -1,5 +1,7 @@
 # Omnia Casa · Locandine riunioni
 
+Applicazione sviluppata in collaborazione con **neXus**.
+
 Programma per Windows e macOS: compili i dati della riunione, vedi l'anteprima e scarichi la locandina in PDF (A3 o A4) o PNG.
 
 ## Uso

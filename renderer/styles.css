@@ -8,9 +8,11 @@ body{font-family:-apple-system,"Segoe UI",system-ui,Roboto,sans-serif;color:var(
 .app{height:100%;display:flex;flex-direction:column;background:
   radial-gradient(900px 500px at 100% -10%, rgba(169,208,114,.35), transparent 60%),
   radial-gradient(700px 500px at -10% 110%, rgba(34,160,52,.18), transparent 60%), var(--bg)}
-.top{display:flex;align-items:center;gap:18px;padding:12px 22px;background:linear-gradient(135deg,var(--green-900),var(--green-800));color:#fff;box-shadow:0 6px 24px rgba(14,58,37,.35)}
-.brand{height:42px;background:rgba(255,255,255,.96);border-radius:10px;padding:4px 10px}
-.top-title{font-size:18px;font-weight:700;letter-spacing:.2px;flex:1}
+.top{display:flex;align-items:center;gap:22px;padding:10px 26px;background:linear-gradient(135deg,#FFFFFF,#E9F3E2);color:var(--green-700);border-bottom:1px solid var(--line);box-shadow:0 6px 24px rgba(14,58,37,.10)}
+.brand{height:76px;width:auto;display:block}
+.top-title{font-size:20px;font-weight:800;letter-spacing:.2px;flex:1}
+.collab{font-size:12.5px;font-weight:600;color:var(--muted);padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.7)}
+.collab strong{color:var(--green-700);font-weight:800;letter-spacing:.03em}
 .main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(360px,430px) 1fr;gap:18px;padding:18px 22px 20px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(20,60,40,.08)}
 .form{overflow:auto;padding:6px 18px 18px}
@@ -28,8 +30,8 @@ button{font:inherit;cursor:pointer}
 .secondary:hover{background:#F1F8EE}
 .primary{background:linear-gradient(180deg,#2BB343,var(--green-500));color:#fff;box-shadow:0 8px 18px rgba(34,160,52,.35),inset 0 1px 0 rgba(255,255,255,.4)}
 .primary:hover{filter:brightness(1.06)}
-.ghost{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.4)}
-.ghost:hover{background:rgba(255,255,255,.24)}
+.ghost{background:#fff;color:var(--green-700);border-color:var(--green-700)}
+.ghost:hover{background:#F1F8EE}
 button:disabled{opacity:.55;cursor:default}
 .switch{display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:12px}
 .switch input{position:absolute;opacity:0}
