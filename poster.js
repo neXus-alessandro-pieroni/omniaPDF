@@ -38,7 +38,7 @@
     if (!(c.ora || '').trim()) out.push('Ora');
     if (!(c.luogo1 || '').trim()) out.push('Luogo');
     var items = (c.ordine || []).filter(function (x) { return x && x.trim(); });
-    if (!items.length) out.push('Ordine del giorno');
+    if (c.mostraOrdine !== false && !items.length) out.push('Ordine del giorno');
     if (c.zoom) {
       if (!safeUrl(c.zoomLink)) out.push('Link Zoom');
     }
@@ -88,6 +88,7 @@ ${chipsHtml}
   }
 
   function agendaHtml(c, land) {
+    if (c.mostraOrdine === false) return '';
     var list = (c.ordine || []).map(function (x) { return (x || '').trim(); }).filter(Boolean).slice(0, 10);
     if (!list.length) return '';
     var n = list.length;

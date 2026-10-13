@@ -8,7 +8,7 @@
       titolo: 'Riunione di condominio', condominio: '', indirizzo: '',
       data: '', ora: '', luogo1: P.SEDE.via, luogo2: P.SEDE.citta,
       zoom: true, zoomLink: '', zoomId: '', zoomPass: '',
-      ordine: [''], orientamento: 'v',
+      ordine: [''], mostraOrdine: true, orientamento: 'v',
     };
   }
   var state = defaults();
@@ -31,6 +31,8 @@
     fields.forEach(function (f) { $(f).value = state[f] || ''; });
     $('zoom').checked = !!state.zoom;
     $('zoomFields').hidden = !state.zoom;
+    $('mostraOrdine').checked = state.mostraOrdine !== false;
+    $('ordineBox').hidden = state.mostraOrdine === false;
     renderAgenda();
     setOrient(state.orientamento, true);
   }
@@ -40,6 +42,9 @@
   });
   $('zoom').addEventListener('change', function () {
     state.zoom = $('zoom').checked; $('zoomFields').hidden = !state.zoom; changed();
+  });
+  $('mostraOrdine').addEventListener('change', function () {
+    state.mostraOrdine = $('mostraOrdine').checked; $('ordineBox').hidden = !state.mostraOrdine; changed();
   });
   $('btnSede').addEventListener('click', function () {
     state.luogo1 = P.SEDE.via; state.luogo2 = P.SEDE.citta;
