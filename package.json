@@ -1,0 +1,75 @@
+{
+  "name": "omnia-locandine",
+  "productName": "Omnia Casa Locandine",
+  "version": "1.0.0",
+  "description": "Crea la locandina delle riunioni di condominio Omnia Casa",
+  "main": "main.js",
+  "author": "Omnia Casa Group",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist": "electron-builder --win --mac --publish never"
+  },
+  "devDependencies": {
+    "electron": "^44.7.1",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "it.omniacasa.locandine",
+    "productName": "Omnia Casa Locandine",
+    "copyright": "Omnia Casa Group",
+    "files": [
+      "main.js",
+      "preload.js",
+      "poster.js",
+      "renderer/**",
+      "assets/**",
+      "fonts/**",
+      "build/icon.png",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "identity": null
+    },
+    "dmg": {
+      "title": "Omnia Casa Locandine"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
+    "electronLanguages": [
+      "it",
+      "en-US"
+    ],
+    "compression": "normal"
+  }
+}

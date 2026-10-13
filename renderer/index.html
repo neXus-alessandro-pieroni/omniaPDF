@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; script-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Omnia Casa · Locandine riunioni</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <img id="brandLogo" alt="Omnia Casa Group" class="brand">
+    <div class="top-title">Locandine riunioni</div>
+    <button id="btnNew" class="ghost" type="button">Nuova riunione</button>
+  </header>
+
+  <main class="main">
+    <section class="panel form" aria-label="Dati della riunione">
+      <fieldset>
+        <legend>Condominio</legend>
+        <label>Titolo
+          <input id="titolo" list="titoli" autocomplete="off" placeholder="Riunione di condominio">
+          <datalist id="titoli"><option value="Riunione di condominio"><option value="Assemblea di condominio"><option value="Assemblea ordinaria"><option value="Assemblea straordinaria"></datalist>
+        </label>
+        <label>Nome condominio
+          <input id="condominio" autocomplete="off" placeholder="es. Condominio Le Palme">
+        </label>
+        <label>Indirizzo del condominio
+          <input id="indirizzo" autocomplete="off" placeholder="es. Via Roma 12">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Quando e dove</legend>
+        <div class="row2">
+          <label>Data
+            <input id="data" type="date">
+          </label>
+          <label>Ora
+            <input id="ora" type="time">
+          </label>
+        </div>
+        <label>Luogo (riga 1)
+          <input id="luogo1" autocomplete="off" placeholder="es. Via della Repubblica, 4">
+        </label>
+        <label>Luogo (riga 2)
+          <input id="luogo2" autocomplete="off" placeholder="es. 63822 Porto San Giorgio (FM)">
+        </label>
+        <button id="btnSede" class="link" type="button">Usa la sede Omnia Casa</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Partecipazione online</legend>
+        <label class="switch"><input id="zoom" type="checkbox"><span class="track"></span><span>Mostra il riquadro Zoom</span></label>
+        <div id="zoomFields">
+          <label>Link della riunione Zoom
+            <input id="zoomLink" autocomplete="off" placeholder="https://us02web.zoom.us/j/…">
+          </label>
+          <div class="row2">
+            <label>ID riunione
+              <input id="zoomId" autocomplete="off" placeholder="000 0000 0000">
+            </label>
+            <label>Passcode
+              <input id="zoomPass" autocomplete="off" placeholder="codice">
+            </label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Ordine del giorno</legend>
+        <ol id="ordine" class="agenda"></ol>
+        <button id="btnAdd" class="secondary" type="button">+ Aggiungi punto</button>
+        <p class="hint">Fino a 10 punti.</p>
+      </fieldset>
+    </section>
+
+    <section class="stage" aria-label="Anteprima">
+      <div class="stage-head">
+        <div class="stage-title">Anteprima</div>
+        <div id="missing" class="missing" hidden></div>
+      </div>
+      <div id="previewBox" class="preview-box">
+        <div id="previewFrameWrap" class="frame-wrap"><iframe id="preview" title="Anteprima locandina" tabindex="-1"></iframe></div>
+      </div>
+      <div class="actions">
+        <div class="seg" role="radiogroup" aria-label="Formato">
+          <button type="button" role="radio" data-size="A4" aria-checked="true">A4</button>
+          <button type="button" role="radio" data-size="A3" aria-checked="false">A3</button>
+        </div>
+        <button id="btnPdf" class="primary" type="button">Scarica PDF</button>
+        <button id="btnPng" class="secondary" type="button">Scarica immagine (PNG)</button>
+      </div>
+    </section>
+  </main>
+  <div id="toast" class="toast" hidden></div>
+</div>
+<script src="../poster.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
