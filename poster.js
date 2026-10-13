@@ -251,9 +251,9 @@ ${agendaBlock}
 <h1 style="margin: 0; font-size: 112px; line-height: 0.94; font-weight: 900; letter-spacing: -3.5px; text-wrap: balance; text-shadow: 0 6px 30px rgba(0,0,0,0.25)">${titolo}</h1>
 <div style="font-size: 30px; font-weight: 500; color: rgba(255,255,255,0.88)">${sottotitolo}</div>
 </div>
-<div style="display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.7fr) minmax(0, 1.9fr); gap: 16px">
-${card('DATA', dataBig, dataSub, 36)}
-${card('ORA', oraBig, '', 36)}
+<div style="display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.7fr) minmax(0, 1.75fr); gap: 16px">
+${card('DATA', dataBig, dataSub, 32, 'white-space: nowrap; ')}
+${card('ORA', oraBig, '', 34, 'white-space: nowrap; ')}
 ${card(luogoLabel, luogo1, luogo2, luogoFs, luogoNw)}
 </div>
 ${zoomBlock}
