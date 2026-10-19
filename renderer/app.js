@@ -151,6 +151,7 @@
     t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, opts.err ? 9000 : 8000);
   }
   async function doExport(format) {
+    if (window.__notaMode) return;
     var miss = P.missing(state);
     if (miss.length && !confirm('Mancano ancora alcuni dati:\n\n• ' + miss.join('\n• ') + '\n\nVuoi scaricare comunque la locandina?')) return;
     var b1 = $('btnPdf'), b2 = $('btnPng'); b1.disabled = b2.disabled = true;

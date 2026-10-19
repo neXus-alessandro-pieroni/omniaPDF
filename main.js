@@ -3,6 +3,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const Poster = require('./poster.js');
+const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 
 const FONTS = [
   ['Inter-Regular.woff', 400], ['Inter-Medium.woff', 500], ['Inter-SemiBold.woff', 600],
@@ -111,6 +112,43 @@ ipcMain.handle('export', async (_e, { config, format }) => {
     if (rw && !rw.isDestroyed()) rw.destroy();
     if (tmp) fs.rm(tmp, () => {});
   }
+});
+
+/* ---------- Nota esplicativa (PDF modificabile) ---------- */
+async function buildNota(cfg) {
+  const clean = (s) => String(s || '').replace(/[^ -~ -ÿ€’‘“”–—]/g, '').replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/€/g, 'EUR').replace(/\s+/g, ' ').trim();
+  const bytes = fs.readFileSync(path.join(__dirname, 'assets', 'nota-esplicativa.pdf'));
+  const pdf = await PDFDocument.load(bytes);
+  const page = pdf.getPage(0);
+  const font = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const line1 = [clean(cfg.dicitura), clean(cfg.nome)].filter(Boolean).join(' ');
+  const cf = clean(cfg.cf);
+  const line2 = cf ? 'C.F. ' + cf : '';
+  const cx = 302.9, maxW = 330;
+  const put = (txt, y) => {
+    if (!txt) return;
+    let size = 11;
+    while (size > 7 && font.widthOfTextAtSize(txt, size) > maxW) size -= 0.5;
+    const w = font.widthOfTextAtSize(txt, size);
+    page.drawText(txt, { x: cx - w / 2, y, size, font, color: rgb(0.082, 0.082, 0.082) });
+  };
+  put(line1, 720.96);
+  put(line2, 708.72);
+  return pdf.save();
+}
+
+ipcMain.handle('nota-build', async (_e, cfg) => Buffer.from(await buildNota(cfg || {})).toString('base64'));
+
+ipcMain.handle('nota-export', async (_e, cfg) => {
+  const base = ['Nota-esplicativa', safeName(cfg && cfg.nome)].filter(Boolean).join('-');
+  const res = await dialog.showSaveDialog(win, {
+    title: 'Salva la nota esplicativa (PDF)',
+    defaultPath: path.join(app.getPath('documents'), base + '.pdf'),
+    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+  });
+  if (res.canceled || !res.filePath) return { ok: false, canceled: true };
+  try { fs.writeFileSync(res.filePath, await buildNota(cfg || {})); return { ok: true, path: res.filePath }; }
+  catch (err) { return { ok: false, error: String(err && err.message || err) }; }
 });
 
 ipcMain.handle('reveal', (_e, p) => { if (typeof p === 'string') shell.showItemInFolder(p); });

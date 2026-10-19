@@ -24,6 +24,10 @@
 <div class="app">
   <header class="top">
     <img class="prod-logo" src="../assets/omnia-print-logo.svg" alt="Omnia Print by neXus">
+    <nav class="tabs" role="tablist" aria-label="Documento">
+      <button type="button" role="tab" data-doc="locandina" aria-selected="true">Locandina riunione</button>
+      <button type="button" role="tab" data-doc="nota" aria-selected="false">Nota esplicativa</button>
+    </nav>
     <div class="top-title"></div>
     <div class="lockup" role="img" aria-label="Omnia Casa in collaborazione con neXus">
       <img id="brandLogo" alt="" class="brand">
@@ -34,7 +38,23 @@
   </header>
 
   <main class="main">
-    <section class="panel form" aria-label="Dati della riunione">
+    <section class="panel form" aria-label="Dati del documento">
+      <div id="notaForm" hidden>
+        <fieldset>
+          <legend>Nota esplicativa</legend>
+          <label>Dicitura
+            <input id="nDicitura" autocomplete="off" placeholder="Condominio">
+          </label>
+          <label>Nome
+            <input id="nNome" autocomplete="off" placeholder="es. Vespucci">
+          </label>
+          <label>Codice fiscale
+            <input id="nCf" autocomplete="off" placeholder="es. 90016320443" maxlength="16" style="text-transform:uppercase">
+          </label>
+          <p class="hint">Il resto del documento resta quello originale (2 pagine).</p>
+        </fieldset>
+      </div>
+      <div id="posterForm">
       <fieldset>
         <legend>Condominio</legend>
         <label>Titolo
@@ -95,6 +115,7 @@
         <p class="hint">Fino a 10 punti.</p>
         </div>
       </fieldset>
+      </div>
     </section>
 
     <section class="stage" aria-label="Anteprima">
@@ -105,12 +126,13 @@
       <div id="previewBox" class="preview-box">
         <div id="previewFrameWrap" class="frame-wrap"><iframe id="preview" title="Anteprima locandina" tabindex="-1"></iframe></div>
       </div>
+      <div id="notaPages" class="nota-pages" hidden></div>
       <div class="actions">
-        <div class="seg" role="radiogroup" aria-label="Orientamento (foglio A4)">
+        <div id="segBox" class="seg" role="radiogroup" aria-label="Orientamento (foglio A4)">
           <button type="button" role="radio" data-orient="v" aria-checked="true">▯ Verticale</button>
           <button type="button" role="radio" data-orient="h" aria-checked="false">▭ Orizzontale</button>
         </div>
-        <span class="fmt">Foglio A4</span>
+        <span id="fmtLbl" class="fmt">Foglio A4</span>
         <button id="btnPdf" class="primary" type="button">Scarica PDF</button>
         <button id="btnPng" class="secondary" type="button">Scarica immagine (PNG)</button>
       </div>
@@ -119,6 +141,8 @@
   <div id="toast" class="toast" hidden></div>
 </div>
 <script src="../poster.js"></script>
+<script src="vendor/pdf.min.js"></script>
 <script src="app.js"></script>
+<script src="nota.js"></script>
 </body>
 </html>
