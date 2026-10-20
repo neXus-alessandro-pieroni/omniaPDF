@@ -114,41 +114,93 @@ ipcMain.handle('export', async (_e, { config, format }) => {
   }
 });
 
-/* ---------- Nota esplicativa (PDF modificabile) ---------- */
-async function buildNota(cfg) {
-  const clean = (s) => String(s || '').replace(/[^ -~ -ÿ€’‘“”–—]/g, '').replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/€/g, 'EUR').replace(/\s+/g, ' ').trim();
-  const bytes = fs.readFileSync(path.join(__dirname, 'assets', 'nota-esplicativa.pdf'));
-  const pdf = await PDFDocument.load(bytes);
-  const page = pdf.getPage(0);
-  const font = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const line1 = [clean(cfg.dicitura), clean(cfg.nome)].filter(Boolean).join(' ');
-  const cf = clean(cfg.cf);
-  const line2 = cf ? 'C.F. ' + cf : '';
-  const cx = 302.9, maxW = 330;
-  const put = (txt, y) => {
-    if (!txt) return;
-    let size = 11;
-    while (size > 7 && font.widthOfTextAtSize(txt, size) > maxW) size -= 0.5;
-    const w = font.widthOfTextAtSize(txt, size);
-    page.drawText(txt, { x: cx - w / 2, y, size, font, color: rgb(0.082, 0.082, 0.082) });
-  };
-  put(line1, 720.96);
-  put(line2, 708.72);
-  return pdf.save();
+/* ---------- Documenti PDF modificabili (nota esplicativa, tariffario) ---------- */
+const clean = (s) => String(s || '').replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/€/g, 'EUR').replace(/[^ -~ -ÿ]/g, '').replace(/\s+/g, ' ').trim();
+
+async function buildDoc(id, cfg) {
+  cfg = cfg || {};
+  if (id === 'nota') {
+    const pdf = await PDFDocument.load(fs.readFileSync(path.join(__dirname, 'assets', 'nota-esplicativa.pdf')));
+    const page = pdf.getPage(0);
+    const font = await pdf.embedFont(StandardFonts.HelveticaBold);
+    const l1 = [clean(cfg.dicitura), clean(cfg.nome)].filter(Boolean).join(' ');
+    const cf = clean(cfg.cf);
+    const put = (txt, y) => {
+      if (!txt) return;
+      let size = 11;
+      while (size > 7 && font.widthOfTextAtSize(txt, size) > 330) size -= 0.5;
+      page.drawText(txt, { x: 302.9 - font.widthOfTextAtSize(txt, size) / 2, y, size, font, color: rgb(0.082, 0.082, 0.082) });
+    };
+    put(l1, 720.96); put(cf ? 'C.F. ' + cf : '', 708.72);
+    return pdf.save();
+  }
+  if (id === 'tariffario') {
+    const pdf = await PDFDocument.load(fs.readFileSync(path.join(__dirname, 'assets', 'tariffario.pdf')));
+    const page = pdf.getPage(0);
+    const font = await pdf.embedFont(StandardFonts.TimesRoman);
+    const txt = clean(cfg.importo);
+    if (txt) {
+      let size = 13;
+      while (size > 8 && font.widthOfTextAtSize(txt, size) > 41) size -= 0.5;
+      page.drawText(txt, { x: 152.439, y: 387.847, size, font, color: rgb(0.1, 0.1, 0.1) });
+    }
+    return pdf.save();
+  }
+  throw new Error('Documento sconosciuto');
 }
+const DOC_NAMES = { nota: ['Nota-esplicativa', 'nome'], tariffario: ['Tariffario-Omnia-Casa', 'importo'] };
 
-ipcMain.handle('nota-build', async (_e, cfg) => Buffer.from(await buildNota(cfg || {})).toString('base64'));
+ipcMain.handle('doc-build', async (_e, { id, cfg }) => Buffer.from(await buildDoc(id, cfg)).toString('base64'));
 
-ipcMain.handle('nota-export', async (_e, cfg) => {
-  const base = ['Nota-esplicativa', safeName(cfg && cfg.nome)].filter(Boolean).join('-');
-  const res = await dialog.showSaveDialog(win, {
-    title: 'Salva la nota esplicativa (PDF)',
+ipcMain.handle('doc-export', async (_e, { id, cfg }) => {
+  const [pre, key] = DOC_NAMES[id] || ['Documento', ''];
+  const base = [pre, key && id === 'nota' ? safeName(cfg && cfg[key]) : ''].filter(Boolean).join('-');
+  const res = process.env.OMNIA_TEST_SAVE_DIR ? { filePath: path.join(process.env.OMNIA_TEST_SAVE_DIR, id + '.pdf') } : await dialog.showSaveDialog(win, {
+    title: 'Salva il documento (PDF)',
     defaultPath: path.join(app.getPath('documents'), base + '.pdf'),
     filters: [{ name: 'PDF', extensions: ['pdf'] }],
   });
   if (res.canceled || !res.filePath) return { ok: false, canceled: true };
-  try { fs.writeFileSync(res.filePath, await buildNota(cfg || {})); return { ok: true, path: res.filePath }; }
+  try { fs.writeFileSync(res.filePath, await buildDoc(id, cfg)); return { ok: true, path: res.filePath }; }
   catch (err) { return { ok: false, error: String(err && err.message || err) }; }
+});
+
+/* ---------- Stampa ---------- */
+async function printImages(images, landscape) {
+  const tmp = path.join(os.tmpdir(), `omnia-stampa-${process.pid}-${Date.now()}.html`);
+  const pw = landscape ? '297mm' : '210mm', ph = landscape ? '210mm' : '297mm';
+  const pages = images.map((u) => `<div class="p"><img src="${u}"></div>`).join('');
+  fs.writeFileSync(tmp, `<!doctype html><meta charset="utf-8"><style>@page{size:A4 ${landscape ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;background:#fff}.p{width:${pw};height:${ph};overflow:hidden;page-break-after:always;break-after:page}.p:last-child{page-break-after:auto;break-after:auto}.p img{width:100%;height:100%;display:block;object-fit:fill}</style>${pages}`);
+  const w = new BrowserWindow({ show: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  try {
+    await w.loadFile(tmp);
+    await w.webContents.executeJavaScript('Promise.all(Array.from(document.images).map(i=>i.decode().catch(()=>0))).then(()=>true)');
+    return await new Promise((resolve) => {
+      w.webContents.print({ silent: false, printBackground: true, landscape: !!landscape, pageSize: 'A4', margins: { marginType: 'none' } },
+        (ok, reason) => resolve(ok ? { ok: true } : { ok: false, canceled: /cancel/i.test(reason || ''), error: reason }));
+    });
+  } finally { if (!w.isDestroyed()) w.destroy(); fs.rm(tmp, () => {}); }
+}
+
+ipcMain.handle('print-images', async (_e, { images, landscape }) => {
+  if (!Array.isArray(images) || !images.length || !images.every((u) => typeof u === 'string' && u.startsWith('data:image/'))) return { ok: false, error: 'Nessuna pagina da stampare' };
+  try { return await printImages(images, !!landscape); } catch (err) { return { ok: false, error: String(err && err.message || err) }; }
+});
+
+ipcMain.handle('print-poster', async (_e, { config }) => {
+  let rw, tmp;
+  try {
+    ({ w: rw, tmp } = await renderWindow(config));
+    const { w: W, h: H } = Poster.dims(config);
+    await rw.webContents.executeJavaScript('document.body.style.zoom = 2; true');
+    rw.setContentSize(W * 2, H * 2);
+    await new Promise((r) => setTimeout(r, 400));
+    const img = await rw.webContents.capturePage({ x: 0, y: 0, width: W * 2, height: H * 2 });
+    const url = 'data:image/png;base64,' + img.toPNG().toString('base64');
+    rw.destroy(); rw = null;
+    return await printImages([url], config.orientamento === 'h');
+  } catch (err) { return { ok: false, error: String(err && err.message || err) }; }
+  finally { if (rw && !rw.isDestroyed()) rw.destroy(); if (tmp) fs.rm(tmp, () => {}); }
 });
 
 ipcMain.handle('reveal', (_e, p) => { if (typeof p === 'string') shell.showItemInFolder(p); });

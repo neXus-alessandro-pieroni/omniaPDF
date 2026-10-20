@@ -165,6 +165,8 @@
   $('btnPdf').addEventListener('click', function () { doExport('pdf'); });
   $('btnPng').addEventListener('click', function () { doExport('png'); });
 
+  window.__getState = function () { return state; };
+
   /* ---------- schermata di avvio (non saltabile, 6,5 s) ---------- */
   (function () {
     var sp = $('splash'); if (!sp) return;
