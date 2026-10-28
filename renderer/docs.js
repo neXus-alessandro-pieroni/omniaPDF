@@ -3,7 +3,7 @@
   var KEY = 'omnia.docs.v1';
   var $ = function (id) { return document.getElementById(id); };
   var TITLES = { locandina: 'Locandina riunione', nota: 'Nota esplicativa', tariffario: 'Tariffario Omnia Casa' };
-  var DEF = { nota: { dicitura: 'Condominio', nome: 'Vespucci', cf: '90016320443' }, tariffario: { importo: '450.00' } };
+  var DEF = { nota: { dicitura: 'Condominio', nome: 'Vespucci', cf: '90016320443' }, tariffario: { importo: '300,00' } };
   var st = JSON.parse(JSON.stringify(DEF));
   try {
     var s = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -25,7 +25,7 @@
 
   /* ---------- anteprima PDF ---------- */
   var timer = null, busy = false, again = false;
-  function schedule() { clearTimeout(timer); timer = setTimeout(render, 150); }
+  function schedule() { clearTimeout(timer); timer = setTimeout(render, mode === 'tariffario' ? 450 : 150); }
   function b64ToBytes(b64) { var bin = atob(b64), u8 = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return u8; }
   async function openDoc(id) {
     return pdfjs.getDocument({ data: b64ToBytes(await window.api.docBuild(id, st[id])) }).promise;
@@ -120,6 +120,18 @@
     } catch (e) { toast('Stampa non riuscita', null, true); }
     b.disabled = false;
   });
+
+  /* ---------- versione e aggiornamenti ---------- */
+  window.api.getVersion().then(function (v) { $('verTag').textContent = 'Versione ' + v; }).catch(function () {});
+  function updToast(msg, label, fn) {
+    var t = $('toast'); t.innerHTML = ''; t.className = 'toast upd';
+    var sp = document.createElement('span'); sp.textContent = msg; t.appendChild(sp);
+    var bt = document.createElement('button'); bt.type = 'button'; bt.textContent = label; bt.addEventListener('click', fn); t.appendChild(bt);
+    var x = document.createElement('button'); x.type = 'button'; x.textContent = 'Più tardi'; x.addEventListener('click', function () { t.hidden = true; }); t.appendChild(x);
+    t.hidden = false;
+  }
+  window.api.onUpdateReady(function (p) { updToast('Aggiornamento ' + p.version + ' pronto', 'Riavvia e aggiorna', function () { window.api.restartApp(); }); });
+  window.api.onUpdateFull(function (p) { updToast('Nuova versione ' + p.version + ' disponibile', 'Scarica', function () { window.api.openExternal(p.url); }); });
 
   setMode('home');
 })();

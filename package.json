@@ -1,26 +1,29 @@
 {
   "name": "omnia-print",
   "productName": "Omnia Print by neXus",
-  "version": "1.0.0",
+  "version": "1.0.14",
   "description": "Omnia Print by neXus: crea la locandina delle riunioni di condominio Omnia Casa",
-  "main": "main.js",
+  "main": "bootstrap.js",
   "author": "Omnia Casa Group · neXus",
   "scripts": {
     "start": "electron .",
     "dist:win": "electron-builder --win --publish never",
     "dist:mac": "electron-builder --mac --publish never",
-    "dist": "electron-builder --win --mac --publish never"
+    "dist": "electron-builder --win --mac --publish never",
+    "make-update": "node scripts/make-update.js"
   },
   "devDependencies": {
     "electron": "^44.7.1",
     "electron-builder": "^26.15.3",
-    "pdfjs-dist": "^3.11.174"
+    "pdfjs-dist": "^3.11.174",
+    "@electron/asar": "^3.4.1"
   },
   "build": {
     "appId": "it.omniacasa.print",
     "productName": "Omnia Print by neXus",
     "copyright": "Omnia Casa Group · neXus",
     "files": [
+      "bootstrap.js",
       "main.js",
       "preload.js",
       "poster.js",

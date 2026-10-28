@@ -1,8 +1,11 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, shell, net } = require('electron');
+const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const Poster = require('./poster.js');
+const APP_VERSION = require('./package.json').version;
+const OMNIA = global.__OMNIA || { root: __dirname, dir: path.join(app.getPath('userData'), 'update'), shell: 1 };
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 
 const FONTS = [
@@ -134,19 +137,44 @@ async function buildDoc(id, cfg) {
     put(l1, 720.96); put(cf ? 'C.F. ' + cf : '', 708.72);
     return pdf.save();
   }
-  if (id === 'tariffario') {
-    const pdf = await PDFDocument.load(fs.readFileSync(path.join(__dirname, 'assets', 'tariffario.pdf')));
-    const page = pdf.getPage(0);
-    const font = await pdf.embedFont(StandardFonts.TimesRoman);
-    const txt = clean(cfg.importo);
-    if (txt) {
-      let size = 13;
-      while (size > 8 && font.widthOfTextAtSize(txt, size) > 41) size -= 0.5;
-      page.drawText(txt, { x: 152.439, y: 387.847, size, font, color: rgb(0.1, 0.1, 0.1) });
-    }
-    return pdf.save();
-  }
+  if (id === 'tariffario') return buildTariffario(cfg);
   throw new Error('Documento sconosciuto');
+}
+
+/* Tariffario: pagine HTML (template) rese in PDF; si modifica solo l'importo annuo per l'intero condominio */
+function parseImporto(v) {
+  let s = String(v == null ? '' : v).replace(/[€\s]/g, '');
+  if (!/^\d[\d.,]*$/.test(s)) return null;
+  if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (s.includes(',')) s = s.replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  const n = Number(s);
+  return Number.isFinite(n) && n > 0 && n < 10000000 ? n : null;
+}
+function formatImporto(v) {
+  const n = parseImporto(v);
+  return n === null ? '€ ___,__' : '€ ' + n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+let tarChain = Promise.resolve(), tarCache = { key: null, data: null };
+function buildTariffario(cfg) {
+  const label = formatImporto(cfg && cfg.importo);
+  const job = tarChain.then(async () => {
+    if (tarCache.key === label) return tarCache.data;
+    const tpl = fs.readFileSync(path.join(__dirname, 'assets', 'tariffario.tpl.html'), 'utf8');
+    const html = tpl.replace('{{IMPORTO}}', label);
+    const tmp = path.join(os.tmpdir(), `omnia-tariffario-${process.pid}-${Date.now()}.html`);
+    fs.writeFileSync(tmp, html);
+    const w = new BrowserWindow({ show: false, width: 794, height: 1123, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
+    try {
+      await w.loadFile(tmp);
+      await w.webContents.executeJavaScript('document.fonts.ready.then(() => true)');
+      const data = await w.webContents.printToPDF({ pageSize: 'A4', printBackground: true, preferCSSPageSize: true, margins: { top: 0, bottom: 0, left: 0, right: 0 } });
+      tarCache = { key: label, data };
+      return data;
+    } finally { if (!w.isDestroyed()) w.destroy(); fs.rm(tmp, () => {}); }
+  });
+  tarChain = job.catch(() => {});
+  return job;
 }
 const DOC_NAMES = { nota: ['Nota-esplicativa', 'nome'], tariffario: ['Tariffario-Omnia-Casa', 'importo'] };
 
@@ -155,7 +183,7 @@ ipcMain.handle('doc-build', async (_e, { id, cfg }) => Buffer.from(await buildDo
 ipcMain.handle('doc-export', async (_e, { id, cfg }) => {
   const [pre, key] = DOC_NAMES[id] || ['Documento', ''];
   const base = [pre, key && id === 'nota' ? safeName(cfg && cfg[key]) : ''].filter(Boolean).join('-');
-  const res = process.env.OMNIA_TEST_SAVE_DIR ? { filePath: path.join(process.env.OMNIA_TEST_SAVE_DIR, id + '.pdf') } : await dialog.showSaveDialog(win, {
+  const res = await dialog.showSaveDialog(win, {
     title: 'Salva il documento (PDF)',
     defaultPath: path.join(app.getPath('documents'), base + '.pdf'),
     filters: [{ name: 'PDF', extensions: ['pdf'] }],
@@ -203,11 +231,47 @@ ipcMain.handle('print-poster', async (_e, { config }) => {
   finally { if (rw && !rw.isDestroyed()) rw.destroy(); if (tmp) fs.rm(tmp, () => {}); }
 });
 
+/* ---------- Aggiornamenti leggeri ---------- */
+const REPO = 'neXus-alessandro-pieroni/omniaPDF';
+function cmpVer(a, b) {
+  const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; }
+  return 0;
+}
+function notify(channel, payload) { if (win && !win.isDestroyed()) win.webContents.send(channel, payload); }
+let pendingUpdate = null;
+async function checkUpdate() {
+  try {
+    const H = { headers: { 'User-Agent': 'OmniaPrint', Accept: 'application/vnd.github+json' } };
+    const rel = await (await net.fetch(`https://api.github.com/repos/${REPO}/releases/latest`, H)).json();
+    const metaAsset = (rel.assets || []).find((a) => a.name === 'update.json');
+    if (!metaAsset) return;
+    const meta = await (await net.fetch(metaAsset.browser_download_url)).json();
+    if (!meta || !meta.version || cmpVer(meta.version, APP_VERSION) <= 0) return;
+    if (meta.shell !== OMNIA.shell) { notify('update-full', { version: meta.version, url: rel.html_url }); return; }
+    if (pendingUpdate === meta.version) { notify('update-ready', { version: meta.version }); return; }
+    const asset = (rel.assets || []).find((a) => a.name === meta.file);
+    if (!asset || !/^update-[\w.]+\.asar$/.test(meta.file) || !/^[0-9a-f]{64}$/.test(meta.sha256)) return;
+    const buf = Buffer.from(await (await net.fetch(asset.browser_download_url)).arrayBuffer());
+    if (crypto.createHash('sha256').update(buf).digest('hex') !== meta.sha256) return;
+    fs.mkdirSync(OMNIA.dir, { recursive: true });
+    const prevNoAsar = process.noAsar; process.noAsar = true;
+    try { fs.writeFileSync(path.join(OMNIA.dir, meta.file), buf); } finally { process.noAsar = prevNoAsar; }
+    fs.writeFileSync(path.join(OMNIA.dir, 'update.json'), JSON.stringify({ version: meta.version, shell: meta.shell, file: meta.file, sha256: meta.sha256 }));
+    pendingUpdate = meta.version;
+    notify('update-ready', { version: meta.version });
+  } catch (e) { /* offline o errore di rete: riprova al prossimo avvio */ }
+}
+ipcMain.handle('get-version', () => APP_VERSION);
+ipcMain.handle('restart-app', () => { app.relaunch(); app.exit(0); });
+ipcMain.handle('open-external', (_e, u) => { if (typeof u === 'string' && u.startsWith('https://github.com/')) shell.openExternal(u); });
+
 ipcMain.handle('reveal', (_e, p) => { if (typeof p === 'string') shell.showItemInFolder(p); });
 
 app.whenReady().then(() => {
   buildMenu();
   createWindow();
+  if (app.isPackaged) setTimeout(checkUpdate, 6000);
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

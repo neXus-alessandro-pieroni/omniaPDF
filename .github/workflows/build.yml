@@ -21,7 +21,12 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm ci
+      - name: Versione = numero della build
+        run: npm version 1.0.${{ github.run_number }} --no-git-tag-version --allow-same-version
       - run: npm run ${{ matrix.script }}
+      - name: Crea l'aggiornamento leggero
+        if: matrix.os == 'windows-latest'
+        run: npm run make-update
       - uses: actions/upload-artifact@v4
         with:
           name: omnia-print-${{ matrix.os }}
@@ -36,3 +41,5 @@ jobs:
           files: |
             dist/*.exe
             dist/*.dmg
+            dist-update/update-*.asar
+            dist-update/update.json
