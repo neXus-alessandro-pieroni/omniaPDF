@@ -23,11 +23,11 @@ cp.execSync('npm install --omit=dev --ignore-scripts --no-audit --no-fund', { cw
 
 // toglie da node_modules ciò che non serve a runtime (mappe, tipi, build per browser)
 (function prune(dir) {
+  if (!fs.existsSync(dir)) return;
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) {
-      if (/node_modules[\\/]pdf-lib$/.test(dir) && ['es', 'dist', 'src'].includes(e.name)) fs.rmSync(p, { recursive: true, force: true });
-      else prune(p);
+      prune(p);
     } else if (/\.(map|ts)$/.test(e.name)) fs.rmSync(p, { force: true });
   }
 })(path.join(stage, 'node_modules'));
