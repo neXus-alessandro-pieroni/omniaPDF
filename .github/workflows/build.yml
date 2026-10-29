@@ -13,7 +13,7 @@ jobs:
         include:
           - os: windows-latest
             script: dist:win
-          - os: macos-15
+          - os: macos-14
             script: dist:mac
     runs-on: ${{ matrix.os }}
     steps:
