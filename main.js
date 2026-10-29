@@ -143,8 +143,14 @@ async function buildDoc(id, cfg) {
     const p2 = pdf.getPage(1);
     p2.drawRectangle({ x: 40, y: 12, width: 545, height: 152, color: rgb(1, 1, 1) });
     const fi = await pdf.embedPng(fs.readFileSync(path.join(__dirname, 'assets', 'nota-firma.png')));
-    const fw = 350, fh = fw * fi.height / fi.width;
-    p2.drawImage(fi, { x: 297.6 - fw / 2 + 60, y: 40, width: fw, height: fh });
+    const fw = 235, fh = fw * fi.height / fi.width, fx = 36, fy = 38;
+    p2.drawImage(fi, { x: fx, y: fy, width: fw, height: fh });
+    const gr = rgb(0.043, 0.37, 0.18), ar = rgb(0.93, 0.6, 0.4);
+    const hb = await pdf.embedFont(StandardFonts.HelveticaBold), hr = await pdf.embedFont(StandardFonts.Helvetica);
+    const cx = fx + fw + 14;
+    p2.drawLine({ start: { x: cx - 8, y: fy + 6 }, end: { x: cx - 8, y: fy + fh - 6 }, thickness: 1, color: ar });
+    const rows = [[hb, 'Via della Repubblica, 4'], [hr, '63822 Porto San Giorgio (FM)'], [hb, 'Tel. 0734 672305'], [hb, 'Cell. 339 646 2117  (urgenze)'], [hr, 'info@omnia-casa.it'], [hr, 'PEC omniacasaamministrazione@pec.it']];
+    rows.forEach(([f, t], i) => p2.drawText(t, { x: cx, y: fy + fh - 14 - i * 15.5, size: 10, font: f, color: gr }));
     return pdf.save();
   }
   if (id === 'tariffario') return buildTariffario(cfg);
