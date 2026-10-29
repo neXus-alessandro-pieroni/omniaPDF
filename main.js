@@ -6,7 +6,6 @@ const path = require('path');
 const Poster = require('./poster.js');
 const APP_VERSION = require('./package.json').version;
 const OMNIA = global.__OMNIA || { root: __dirname, dir: path.join(app.getPath('userData'), 'update'), shell: 1 };
-const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 
 const FONTS = [
   ['Inter-Regular.woff', 400], ['Inter-Medium.woff', 500], ['Inter-SemiBold.woff', 600],
@@ -118,41 +117,10 @@ ipcMain.handle('export', async (_e, { config, format }) => {
 });
 
 /* ---------- Documenti PDF modificabili (nota esplicativa, tariffario) ---------- */
-const clean = (s) => String(s || '').replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/€/g, 'EUR').replace(/[^ -~ -ÿ]/g, '').replace(/\s+/g, ' ').trim();
 
 async function buildDoc(id, cfg) {
   cfg = cfg || {};
-  if (id === 'nota') {
-    const pdf = await PDFDocument.load(fs.readFileSync(path.join(__dirname, 'assets', 'nota-esplicativa.pdf')));
-    const page = pdf.getPage(0);
-    const font = await pdf.embedFont(StandardFonts.HelveticaBold);
-    const l1 = [clean(cfg.dicitura), clean(cfg.nome)].filter(Boolean).join(' ');
-    const cf = clean(cfg.cf);
-    const put = (txt, y) => {
-      if (!txt) return;
-      let size = 11;
-      while (size > 7 && font.widthOfTextAtSize(txt, size) > 330) size -= 0.5;
-      page.drawText(txt, { x: 302.9 - font.widthOfTextAtSize(txt, size) / 2, y, size, font, color: rgb(0.082, 0.082, 0.082) });
-    };
-    put(l1, 720.96); put(cf ? 'C.F. ' + cf : '', 708.72);
-    // nuovo logo in testata (pag. 1)
-    const logo = await pdf.embedPng(fs.readFileSync(path.join(__dirname, 'assets', 'nota-logo.png')));
-    const lw = 96, lh = lw * logo.height / logo.width;
-    page.drawImage(logo, { x: 297.6 - lw / 2, y: 841.68 - 14 - lh, width: lw, height: lh });
-    // nuova firma con logo (pag. 2): copre la vecchia firma e la scritta di chiusura
-    const p2 = pdf.getPage(1);
-    p2.drawRectangle({ x: 40, y: 12, width: 545, height: 152, color: rgb(1, 1, 1) });
-    const fi = await pdf.embedPng(fs.readFileSync(path.join(__dirname, 'assets', 'nota-firma.png')));
-    const fw = 235, fh = fw * fi.height / fi.width, fx = 36, fy = 38;
-    p2.drawImage(fi, { x: fx, y: fy, width: fw, height: fh });
-    const gr = rgb(0.043, 0.37, 0.18), ar = rgb(0.93, 0.6, 0.4);
-    const hb = await pdf.embedFont(StandardFonts.HelveticaBold), hr = await pdf.embedFont(StandardFonts.Helvetica);
-    const cx = fx + fw + 14;
-    p2.drawLine({ start: { x: cx - 8, y: fy + 6 }, end: { x: cx - 8, y: fy + fh - 6 }, thickness: 1, color: ar });
-    const rows = [[hb, 'Via della Repubblica, 4'], [hr, '63822 Porto San Giorgio (FM)'], [hb, 'Tel. 0734 672305'], [hb, 'Cell. 339 646 2117  (urgenze)'], [hr, 'info@omnia-casa.it'], [hr, 'PEC omniacasaamministrazione@pec.it']];
-    rows.forEach(([f, t], i) => p2.drawText(t, { x: cx, y: fy + fh - 14 - i * 15.5, size: 10, font: f, color: gr }));
-    return pdf.save();
-  }
+  if (id === 'nota') return buildNota(cfg);
   if (id === 'tariffario') return buildTariffario(cfg);
   throw new Error('Documento sconosciuto');
 }
@@ -171,26 +139,37 @@ function formatImporto(v) {
   const n = parseImporto(v);
   return n === null ? '€ ___,__' : '€ ' + n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
-let tarChain = Promise.resolve(), tarCache = { key: null, data: null };
-function buildTariffario(cfg) {
-  const label = formatImporto(cfg && cfg.importo);
-  const job = tarChain.then(async () => {
-    if (tarCache.key === label) return tarCache.data;
-    const tpl = fs.readFileSync(path.join(__dirname, 'assets', 'tariffario.tpl.html'), 'utf8');
-    const html = tpl.replace('{{IMPORTO}}', label);
-    const tmp = path.join(os.tmpdir(), `omnia-tariffario-${process.pid}-${Date.now()}.html`);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let docChain = Promise.resolve();
+const docCache = {};
+/* Rende in PDF un template HTML (A4, CSS @page) sostituendo i segnaposto; una sola resa alla volta, con cache sull'ultimo risultato */
+function renderTemplate(name, vars) {
+  const key = JSON.stringify(vars);
+  const job = docChain.then(async () => {
+    if (docCache[name] && docCache[name].key === key) return docCache[name].data;
+    let html = fs.readFileSync(path.join(__dirname, 'assets', name + '.tpl.html'), 'utf8');
+    Object.keys(vars).forEach((k) => { html = html.split('{{' + k + '}}').join(vars[k]); });
+    const tmp = path.join(os.tmpdir(), `omnia-${name}-${process.pid}-${Date.now()}.html`);
     fs.writeFileSync(tmp, html);
     const w = new BrowserWindow({ show: false, width: 794, height: 1123, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
     try {
       await w.loadFile(tmp);
       await w.webContents.executeJavaScript('document.fonts.ready.then(() => true)');
       const data = await w.webContents.printToPDF({ pageSize: 'A4', printBackground: true, preferCSSPageSize: true, margins: { top: 0, bottom: 0, left: 0, right: 0 } });
-      tarCache = { key: label, data };
+      docCache[name] = { key, data };
       return data;
     } finally { if (!w.isDestroyed()) w.destroy(); fs.rm(tmp, () => {}); }
   });
-  tarChain = job.catch(() => {});
+  docChain = job.catch(() => {});
   return job;
+}
+function buildTariffario(cfg) { return renderTemplate('tariffario', { IMPORTO: formatImporto(cfg && cfg.importo) }); }
+function buildNota(cfg) {
+  cfg = cfg || {};
+  const l1 = [cfg.dicitura, cfg.nome].map((x) => String(x || '').trim()).filter(Boolean).join(' ');
+  const cf = String(cfg.cf || '').trim();
+  const dest = (l1 ? '<b>' + esc(l1) + '</b>' : '') + (cf ? '<span>C.F. ' + esc(cf) + '</span>' : '');
+  return renderTemplate('nota', { DESTINATARIO: dest });
 }
 const DOC_NAMES = { nota: ['Nota-esplicativa', 'nome'], tariffario: ['Tariffario-Omnia-Casa', 'importo'] };
 

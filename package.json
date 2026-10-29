@@ -13,10 +13,10 @@
     "make-update": "node scripts/make-update.js"
   },
   "devDependencies": {
+    "@electron/asar": "^3.4.1",
     "electron": "^44.7.1",
     "electron-builder": "^26.15.3",
-    "pdfjs-dist": "^3.11.174",
-    "@electron/asar": "^3.4.1"
+    "pdfjs-dist": "^3.11.174"
   },
   "build": {
     "appId": "it.omniacasa.print",
@@ -78,8 +78,5 @@
       "en-US"
     ],
     "compression": "normal"
-  },
-  "dependencies": {
-    "pdf-lib": "^1.17.1"
   }
 }
