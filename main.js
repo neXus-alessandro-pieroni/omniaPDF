@@ -135,6 +135,16 @@ async function buildDoc(id, cfg) {
       page.drawText(txt, { x: 302.9 - font.widthOfTextAtSize(txt, size) / 2, y, size, font, color: rgb(0.082, 0.082, 0.082) });
     };
     put(l1, 720.96); put(cf ? 'C.F. ' + cf : '', 708.72);
+    // nuovo logo in testata (pag. 1)
+    const logo = await pdf.embedPng(fs.readFileSync(path.join(__dirname, 'assets', 'nota-logo.png')));
+    const lw = 96, lh = lw * logo.height / logo.width;
+    page.drawImage(logo, { x: 297.6 - lw / 2, y: 841.68 - 14 - lh, width: lw, height: lh });
+    // nuova firma con logo (pag. 2): copre la vecchia firma e la scritta di chiusura
+    const p2 = pdf.getPage(1);
+    p2.drawRectangle({ x: 40, y: 12, width: 545, height: 152, color: rgb(1, 1, 1) });
+    const fi = await pdf.embedPng(fs.readFileSync(path.join(__dirname, 'assets', 'nota-firma.png')));
+    const fw = 350, fh = fw * fi.height / fi.width;
+    p2.drawImage(fi, { x: 297.6 - fw / 2 + 60, y: 40, width: fw, height: fh });
     return pdf.save();
   }
   if (id === 'tariffario') return buildTariffario(cfg);
